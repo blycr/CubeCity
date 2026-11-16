@@ -1,5 +1,6 @@
 import { getAdjustedStabilityRate, STABILITY_CONFIG } from '@/constants/constants.js'
 import { getEffectiveBuildingValue } from '@/js/utils/building-interaction-utils.js'
+import { computeAchievements, computeCityLevel } from '@/simulation/cityEngine.js'
 import { defineStore } from 'pinia'
 
 export const useGameState = defineStore('gameState', {
@@ -25,7 +26,7 @@ export const useGameState = defineStore('gameState', {
     cityLevel: 1,
     cityName: 'HeXian City',
     citySize: 16,
-    language: 'en',
+    language: 'zh',
     showMapOverview: false,
 
     // 音乐系统状态
@@ -172,6 +173,17 @@ export const useGameState = defineStore('gameState', {
       state.metadata.flat().filter(tile => tile.building === 'police').length,
     fireStationCount: state =>
       state.metadata.flat().filter(tile => tile.building === 'fire_station').length,
+    roadCount: state =>
+      state.metadata.flat().filter(tile => tile.building === 'road').length,
+    achievements() {
+      return computeAchievements(this, {
+        buildingCount: this.buildingCount,
+        dailyIncome: this.dailyIncome,
+        population: this.population,
+        pollution: this.pollution,
+        stability: this.stability,
+      })
+    },
   },
   actions: {
     updateStability() {
@@ -268,10 +280,21 @@ export const useGameState = defineStore('gameState', {
     setTile(x, y, patch) {
       // 合并 patch 到指定 tile
       Object.assign(this.metadata[x][y], patch)
+      this.syncCityLevel()
     },
     updateTile(x, y, patch) {
       // 语义同 setTile，便于扩展
       Object.assign(this.metadata[x][y], patch)
+      this.syncCityLevel()
+    },
+    syncCityLevel() {
+      this.cityLevel = computeCityLevel({
+        buildingCount: this.buildingCount,
+        population: this.population,
+        dailyIncome: this.dailyIncome,
+        pollution: this.pollution,
+        stability: this.stability,
+      })
     },
     getTile(x, y) {
       return this.metadata?.[x]?.[y] || null
@@ -290,6 +313,7 @@ export const useGameState = defineStore('gameState', {
       // 稳定度系统更新（每5秒执行一次）
       this.updateStability()
       this.applyStabilityChange()
+      this.syncCityLevel()
     },
     resetAll() {
       this.metadata = Array.from({ length: 17 }, _ =>
@@ -308,7 +332,7 @@ export const useGameState = defineStore('gameState', {
       this.cityLevel = 1
       this.cityName = 'HeXian City'
       this.citySize = 16
-      this.language = 'en'
+      this.language = 'zh'
       this.showMapOverview = false
       this.stability = 100
       this.stabilityChangeRate = 0

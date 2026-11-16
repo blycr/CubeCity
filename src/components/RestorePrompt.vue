@@ -8,19 +8,10 @@ const show = ref(false)
 const enableMusic = ref(true) // 默认开启背景音乐
 const STORAGE_KEY = 'gameState' // pinia 默认以 store.$id 作为 key
 const RECENTLY_REJECTED_KEY = 'recentlyRejected'
-const REJECTED_DURATION = 3000 // ms
 
 onMounted(() => {
-  const rejectedAt = localStorage.getItem(RECENTLY_REJECTED_KEY)
-  const now = Date.now()
-  if (rejectedAt && now - Number(rejectedAt) < REJECTED_DURATION) {
-    show.value = false
-    return
-  }
-  // 检查 localStorage 是否有存档
-  if (localStorage.getItem(STORAGE_KEY)) {
-    show.value = true
-  }
+  // 默认不弹出遮挡视线的恢复存档弹窗，Pinia 已自动恢复存档
+  show.value = false
 })
 
 function onAccept() {

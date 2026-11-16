@@ -48,6 +48,14 @@ export function handleBuildMode(ctx, tile) {
     showToast('error', message)
     return
   }
+  const buildCost = BUILDING_DATA[buildingTypeToBuild]?.levels[buildingLevelToBuild]?.cost ?? 0
+  if (ctx.gameState.credits < buildCost) {
+    const message = ctx.gameState.language === 'zh'
+      ? '资金不足，无法建造。'
+      : 'Insufficient funds, unable to build.'
+    showToast('error', message)
+    return
+  }
   // 通过 Pinia 修改 metadata
   ctx.gameState.setTile(x, y, {
     type: 'ground',
@@ -59,14 +67,7 @@ export function handleBuildMode(ctx, tile) {
     // 产出因子 可能因为某些因素而影响产出，比如人口、科技等
     outputFactor: 1,
   })
-  if (ctx.gameState.credits < BUILDING_DATA[buildingTypeToBuild]?.levels[buildingLevelToBuild]?.cost) {
-    const message = ctx.gameState.language === 'zh'
-      ? '资金不足，无法建造。'
-      : 'Insufficient funds, unable to build.'
-    showToast('error', message)
-    return
-  }
-  ctx.gameState.updateCredits(-BUILDING_DATA[buildingTypeToBuild]?.levels[buildingLevelToBuild]?.cost)
+  ctx.gameState.updateCredits(-buildCost)
   // ...后续同步 Three.js 层刷新
   tile.setBuilding(buildingTypeToBuild, buildingLevelToBuild, 0)
   tile.setType('ground')

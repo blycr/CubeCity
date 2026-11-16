@@ -1,15 +1,27 @@
 <script setup>
+import { eventBus } from '@/js/utils/event-bus.js'
 import gsap from 'gsap'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useGameState } from '../stores/useGameState'
 
 const gameState = useGameState()
+const aiStatus = ref({ running: false, reason: '', phase: '' })
+function onAiStatus(payload) {
+  aiStatus.value = { ...aiStatus.value, ...payload }
+}
+onMounted(() => {
+  eventBus.on('agent:ai-status', onAiStatus)
+})
+onUnmounted(() => {
+  eventBus.off('agent:ai-status', onAiStatus)
+})
 const modeLabel = computed(() => {
+  const isZh = gameState.language === 'zh'
   switch (gameState.currentMode) {
-    case 'build': return 'BUILD'
-    case 'relocate': return 'RELOCATE'
-    case 'demolish': return 'DEMOLISH'
-    case 'select': return 'SELECT'
+    case 'build': return isZh ? '建造' : 'BUILD'
+    case 'relocate': return isZh ? '搬迁' : 'RELOCATE'
+    case 'demolish': return isZh ? '拆除' : 'DEMOLISH'
+    case 'select': return isZh ? '选择' : 'SELECT'
     default: return gameState.currentMode?.toUpperCase() || 'UNKNOWN'
   }
 })
@@ -48,14 +60,22 @@ watch(() => gameState.currentMode, (newVal, oldVal) => {
 </script>
 
 <template>
-  <div class="absolute top-4 left-4 resource-display rounded px-3 py-1">
-    <span class="text-xs text-gray-400 uppercase tracking-wide">MODE:</span>
-    <span
-      ref="modeSpan"
-      class="text-sm font-bold ml-2 transition-colors duration-200"
-      :class="modeColorClass"
+  <div class="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+    <div class="resource-display rounded px-3 py-1 w-fit">
+      <span class="text-xs text-gray-400 uppercase tracking-wide">{{ gameState.language === 'zh' ? '模式:' : 'MODE:' }}</span>
+      <span
+        ref="modeSpan"
+        class="text-sm font-bold ml-2 transition-colors duration-200"
+        :class="modeColorClass"
+      >
+        {{ modeLabel }}
+      </span>
+    </div>
+    <div
+      v-if="aiStatus.running && aiStatus.reason"
+      class="resource-display rounded px-3 py-1 text-xs text-industrial-green font-medium max-w-md truncate"
     >
-      {{ modeLabel }}
-    </span>
+      🤖 {{ aiStatus.reason }}
+    </div>
   </div>
 </template>

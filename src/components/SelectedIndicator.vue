@@ -10,7 +10,7 @@ const selectedBuildingLabel = computed(() => selectedBuilding.value ? `${selecte
 
 <template>
   <div v-if="selectedBuilding" class="absolute top-4 right-4 resource-display rounded px-3 py-1">
-    <span class="text-xs text-gray-400 uppercase tracking-wide">SELECTED:</span>
+    <span class="text-xs text-gray-400 uppercase tracking-wide">{{ gameState.language === 'zh' ? '已选:' : 'SELECTED:' }}</span>
     <span class="text-sm font-bold text-industrial-blue ml-2">{{ selectedBuildingLabel }}</span>
   </div>
 </template>

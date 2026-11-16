@@ -1,4 +1,5 @@
 <script setup>
+import { eventBus } from '@/js/utils/event-bus.js'
 import { useGameState } from '@/stores/useGameState.js'
 import { onMounted, onUnmounted } from 'vue'
 import BuildingDetails from './components/BuildingDetails.vue'
@@ -19,6 +20,8 @@ const gameState = useGameState()
 // 时间管理 - 统一5秒计时器
 let dayInterval = null
 let isPaused = false
+let autoTickEnabled = true
+let tickIntervalMs = 5000
 
 // 页面可见性监听 - 实现HX-43离屏暂停功能
 function handleVisibilityChange() {
@@ -26,13 +29,16 @@ function handleVisibilityChange() {
     // 页面不可见时暂停计时器
     if (dayInterval) {
       clearInterval(dayInterval)
+      dayInterval = null
       isPaused = true
     }
   }
   else if (!document.hidden && isPaused) {
     // 页面可见时恢复计时器
-    startDayTimer()
     isPaused = false
+    if (autoTickEnabled) {
+      startDayTimer()
+    }
   }
 }
 
@@ -40,10 +46,30 @@ function handleVisibilityChange() {
 function startDayTimer() {
   if (dayInterval) {
     clearInterval(dayInterval)
+    dayInterval = null
+  }
+  if (!autoTickEnabled) {
+    return
   }
   dayInterval = setInterval(() => {
     gameState.nextDay()
-  }, 5000)
+  }, tickIntervalMs)
+}
+
+function handleAgentAutoTick({ enabled, intervalMs } = {}) {
+  if (typeof enabled === 'boolean') {
+    autoTickEnabled = enabled
+  }
+  if (typeof intervalMs === 'number' && Number.isFinite(intervalMs)) {
+    tickIntervalMs = Math.max(50, intervalMs)
+  }
+  if (autoTickEnabled) {
+    startDayTimer()
+  }
+  else if (dayInterval) {
+    clearInterval(dayInterval)
+    dayInterval = null
+  }
 }
 
 // 对话框由 DialogLayer 统一处理，无需在此监听或管理
@@ -61,6 +87,7 @@ onMounted(() => {
   startDayTimer()
   // 监听页面可见性变化 - 实现HX-43离屏暂停功能
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  eventBus.on('agent:set-auto-tick', handleAgentAutoTick)
 })
 
 onUnmounted(() => {
@@ -71,6 +98,7 @@ onUnmounted(() => {
   }
   // 移除页面可见性监听
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  eventBus.off('agent:set-auto-tick', handleAgentAutoTick)
 })
 </script>
 

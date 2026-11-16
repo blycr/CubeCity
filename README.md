@@ -55,6 +55,7 @@ Welcome to CubeCity! This is a cartoon-style 2.5D city simulation game where you
 
 *   **🎮 新手指南:** [玩家游玩指南](./docs/新手指南.md) - 详细的游戏玩法说明和技巧
 *   **👨‍💻 开发指南:** [新手开发指南](./docs/新手开发指南.md) - 完整的开发环境搭建和开发规范
+*   **🤖 AI 托管与 Agent 指南:** [Agent 接入与 AI 托管文档](./docs/AGENT_GUIDE.md) - 零视觉状态机接口、持续实时 AI 市长、动态等级与成就说明
 *   **📋 产品需求:** [PRD 文档](./docs/PRD.md) - 产品需求文档
 *   **🔧 技术设计:** [TD 文档](./docs/TD.md) - 技术设计文档
 
@@ -138,3 +139,10 @@ this.statusConfig = [
 - **内存安全**：完善的清理机制防止内存泄漏
 
 参考实现：`src/js/components/tiles/buildings/park.js`
+
+## 新功能：持续实时 AI 托管与动态城市成长 🤖
+
+- **持续实时 AI 市长（[autonomousMayor.js](src/simulation/autonomousMayor.js)）**：每周期实时感知城市状态，自动铺设非“田字格”有机路网、按功能区场强布局建造与升级，并在全图建设完成后继续执行**城市更新（淘汰低阶工厂、产业升级与绿化减污）**，支持随时手动干预。
+- **结构化 Agent 桥接（[agentBridge.js](src/js/agent/agentBridge.js)）**：暴露 `window.__CUBECITY_AGENT__`，支持 `getState()`、`executeAction()`、`startAutonomousAI()` / `stopAutonomousAI()` / `setAISpeed()` 及 Node 无头验证脚本 `node scripts/agent-play.mjs`。
+- **动态城市等级与实时成就（[cityEngine.js](src/simulation/cityEngine.js) / [DashboardFooter.vue](src/components/DashboardFooter.vue)）**：实装 `Lv.1 ~ Lv.8` 城市等级晋升、5 项实时成就进度与解锁、以及电网/交通/安全/环境实时状态监控。
+- **即开即用体验**：默认简体中文界面，关闭首屏自动弹出教程与存档遮罩；顶部支持 **`🤖 AI 托管`** 与 `1x / 3x / 10x` 倍速切换，亦可通过 `?showcase=1` 直达开演。详细用法见 [AI 托管与 Agent 指南](./docs/AGENT_GUIDE.md)。

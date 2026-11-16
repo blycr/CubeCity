@@ -19,6 +19,12 @@ function removeToast(id) {
 }
 eventBus.on('toast:add', ({ message, type }) => {
   gameState.addToast(message, type)
+  const latest = gameState.toastQueue[gameState.toastQueue.length - 1]
+  if (latest) {
+    setTimeout(() => {
+      gameState.removeToast(latest.id)
+    }, 2800)
+  }
 })
 </script>
 

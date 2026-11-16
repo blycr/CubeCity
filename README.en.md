@@ -53,6 +53,7 @@ The game revolves around four main operation modes, allowing you to easily manag
 
 *   **🎮 Player Guide:** [Game Guide](./docs/新手指南.md) - Detailed gameplay instructions and tips
 *   **👨‍💻 Developer Guide:** [Developer Guide](./docs/新手开发指南.md) - Complete development environment setup and coding standards
+*   **🤖 AI Mayor & Agent Guide:** [Agent & AI Guide](./docs/AGENT_GUIDE.md) - Zero-vision state engine, continuous AI Mayor, dynamic levels & achievements
 *   **📋 Product Requirements:** [PRD Document](./docs/PRD.md) - Product requirements document
 *   **🔧 Technical Design:** [TD Document](./docs/TD.md) - Technical design document
 
@@ -134,5 +135,12 @@ this.statusConfig = [
 - **Interval Cycling:** Use `setInterval` for automatic switching
 - **Animation Optimization:** Dedicated `fadeOut` method for smooth transitions
 - **Memory Safety:** Complete cleanup to prevent memory leaks
+
+## New Feature: Real-Time Autonomous AI Mayor & Dynamic Progression 🤖
+
+- **Continuous Autonomous AI Mayor ([autonomousMayor.js](src/simulation/autonomousMayor.js)):** Evaluates live city state every cycle, organically extends street networks (avoiding rigid checkerboard grids), places zoned districts, upgrades buildings, and continuously performs **urban renewal** even after the map is full while adapting to manual player edits.
+- **Structured Agent Bridge ([agentBridge.js](src/js/agent/agentBridge.js)):** Exposes `window.__CUBECITY_AGENT__` (`getState()`, `executeAction()`, `startAutonomousAI()`, `stopAutonomousAI()`, `setAISpeed()`) backed by the shared headless engine ([cityEngine.js](src/simulation/cityEngine.js)) and CLI runner (`node scripts/agent-play.mjs`).
+- **Dynamic City Levels & Live Achievements ([DashboardFooter.vue](src/components/DashboardFooter.vue)):** Implements `Lv.1 ~ Lv.8` city progression, 5 live achievements, and real-time Power/Transport/Security/Environment system indicators.
+- **Controls:** Toggle **`🤖 AI Mayor`** (`🤖 AI 托管`) and `1x / 3x / 10x` speed in the top bar, or open `?showcase=1` to auto-start from an empty plot. See [docs/AGENT_GUIDE.md](./docs/AGENT_GUIDE.md).
 
 Reference: `src/js/components/tiles/buildings/park.js`

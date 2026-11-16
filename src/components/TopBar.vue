@@ -2,7 +2,7 @@
 import { eventBus } from '@/js/utils/event-bus.js'
 import { useGameState } from '@/stores/useGameState.js'
 import { storeToRefs } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AnimatedNumber from './AnimatedNumber.vue'
 import AudioManager from './AudioManager.vue'
 import GuideModal from './GuideModal.vue'
@@ -65,6 +65,36 @@ function toggleGuide() {
 function showGuideModal() {
   showGuide.value = true
 }
+
+// AI 持续托管控制状态
+const isShowcaseRunning = ref(false)
+const aiSpeed = ref(3)
+function onShowcaseState({ running, speed }) {
+  isShowcaseRunning.value = Boolean(running)
+  if (speed)
+    aiSpeed.value = speed
+}
+function toggleAiMayor() {
+  const agent = window.__CUBECITY_AGENT__
+  if (!agent)
+    return
+  if (isShowcaseRunning.value)
+    agent.stopAutonomousAI()
+  else
+    agent.startAutonomousAI({ speed: aiSpeed.value, freshStart: false })
+}
+function cycleAiSpeed() {
+  const order = [1, 3, 10]
+  const next = order[(order.indexOf(aiSpeed.value) + 1) % order.length]
+  aiSpeed.value = next
+  window.__CUBECITY_AGENT__?.setAISpeed(next)
+}
+onMounted(() => {
+  eventBus.on('agent:showcase-state', onShowcaseState)
+})
+onUnmounted(() => {
+  eventBus.off('agent:showcase-state', onShowcaseState)
+})
 </script>
 
 <template>
@@ -206,6 +236,22 @@ function showGuideModal() {
             @click="toggleMapOverview"
           >
             {{ language === 'zh' ? (showMapOverview ? '🗺️ 隐藏' : '🗺️ 地图') : (showMapOverview ? '🗺️ Hide' : '🗺️ Map') }}
+          </button>
+
+          <!-- 第三行：AI 实时持续托管与倍速 -->
+          <button
+            class="col-span-2 px-2 py-1 rounded text-white text-sm font-bold shadow transition"
+            :class="isShowcaseRunning ? 'bg-industrial-red hover:bg-red-600' : 'bg-industrial-blue hover:bg-industrial-blue/80'"
+            @click="toggleAiMayor"
+          >
+            {{ isShowcaseRunning ? (language === 'zh' ? '⏸️ 暂停 AI' : '⏸️ Pause AI') : (language === 'zh' ? '🤖 AI 托管' : '🤖 AI Mayor') }}
+          </button>
+          <button
+            class="px-2 py-1 rounded bg-gray-700 text-white text-xs font-bold hover:bg-gray-600 transition"
+            :title="language === 'zh' ? '切换 AI 运行倍速' : 'Cycle AI Speed'"
+            @click="cycleAiSpeed"
+          >
+            {{ aiSpeed }}x
           </button>
         </div>
       </div>

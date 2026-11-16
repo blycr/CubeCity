@@ -1,5 +1,6 @@
 import { useGameState } from '@/stores/useGameState.js'
 import * as THREE from 'three'
+import AgentBridge from './agent/agentBridge.js'
 import Camera from './camera.js'
 import Renderer from './renderer.js'
 import sources from './sources.js'
@@ -45,6 +46,8 @@ export default class Experience {
     this.iMouse = new IMouse()
     this.world = new World()
     this.gameState = useGameState()
+    this.agentBridge = new AgentBridge(this)
+    window.__CUBECITY_AGENT__ = this.agentBridge
 
     this.sizes.on('resize', () => {
       this.resize()

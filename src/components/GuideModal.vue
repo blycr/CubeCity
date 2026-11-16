@@ -19,24 +19,14 @@ const showQuickReference = ref(false)
 // localStorage 相关常量
 const FIRST_VISIT_KEY = 'cubecity_first_visit'
 
-// 检查是否首次访问
-function isFirstVisit() {
-  return !localStorage.getItem(FIRST_VISIT_KEY)
-}
-
 // 标记已访问
 function markAsVisited() {
   localStorage.setItem(FIRST_VISIT_KEY, 'true')
 }
 
-// 组件挂载时检查首次访问状态
+// 组件挂载时不再自动弹出新手教程，保持主视野清爽；用户仍可通过顶部“指南”按钮手动打开
 onMounted(() => {
-  if (isFirstVisit()) {
-    // 首次访问时自动显示新手教程
-    emit('showGuide')
-    // 标记为已访问
-    markAsVisited()
-  }
+  markAsVisited()
 })
 
 function closeModal() {

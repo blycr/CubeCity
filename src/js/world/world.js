@@ -21,6 +21,14 @@ export default class World {
 
       // 交互系统
       this.interactor = new Interactor(this.city.root)
+
+      // 支持通过 ?showcase=1 或 ?demo=1 自动开启 AI 建设表演
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('showcase') === '1' || params.get('demo') === '1') {
+        setTimeout(() => {
+          this.experience.agentBridge?.runAutoShowcase()
+        }, 400)
+      }
     })
   }
 

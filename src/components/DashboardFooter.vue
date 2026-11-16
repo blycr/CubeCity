@@ -7,51 +7,65 @@ import AnimatedNumber from './AnimatedNumber.vue'
 
 const gameState = useGameState()
 const { t } = useI18n()
-const { buildingCount, dailyIncome, pollution, stability } = storeToRefs(gameState)
+const { buildingCount, dailyIncome, pollution, stability, achievements, power, maxPower, roadCount, hospitalCount, policeStationCount, fireStationCount } = storeToRefs(gameState)
+
+const primaryAchievements = computed(() => achievements.value.slice(0, 2))
+const extraAchievements = computed(() => achievements.value.slice(2))
 
 function showAchievements() {
-  gameState.addToast(t('dashboardFooter.achievementLoading'), 'info')
+  const unlockedCount = achievements.value.filter(a => a.unlocked).length
+  const summary = achievements.value
+    .map(a => `${t(`dashboardFooter.${a.key}`)}:${a.progress}%`)
+    .join(' | ')
+  const prefix = gameState.language === 'zh'
+    ? `🏆 已解锁 ${unlockedCount}/${achievements.value.length}`
+    : `🏆 Unlocked ${unlockedCount}/${achievements.value.length}`
+  gameState.addToast(`${prefix} (${summary})`, unlockedCount === achievements.value.length ? 'success' : 'info')
 }
 
 onMounted(() => {
-  // 时间管理已统一到 App.vue，无需在组件中重复启动计时器
+  gameState.syncCityLevel()
 })
 
 onUnmounted(() => {
   // 时间管理已统一到 App.vue，无需在组件中管理计时器
 })
 
-// 系统状态数据抽离
-const systemStatusList = computed(() => [
-  {
-    key: 'powerGrid',
-    status: 'online',
-    colorClass: 'text-industrial-green',
-    statusClass: 'status-online',
-    label: t('dashboardFooter.online'),
-  },
-  {
-    key: 'transport',
-    status: 'limited',
-    colorClass: 'text-industrial-yellow',
-    statusClass: 'status-warning',
-    label: t('dashboardFooter.limited'),
-  },
-  {
-    key: 'security',
-    status: 'secure',
-    colorClass: 'text-industrial-green',
-    statusClass: 'status-online',
-    label: t('dashboardFooter.secure'),
-  },
-  {
-    key: 'environment',
-    status: 'moderate',
-    colorClass: 'text-industrial-yellow',
-    statusClass: 'status-warning',
-    label: t('dashboardFooter.moderate'),
-  },
-])
+// 系统状态数据（实时响应式计算）
+const systemStatusList = computed(() => {
+  const powerBalance = maxPower.value - power.value
+  const powerStatus = powerBalance < 0
+    ? { colorClass: 'text-red-500', statusClass: 'status-error', label: t('dashboardFooter.overload') }
+    : powerBalance < 50
+      ? { colorClass: 'text-industrial-yellow', statusClass: 'status-warning', label: t('dashboardFooter.tight') }
+      : { colorClass: 'text-industrial-green', statusClass: 'status-online', label: t('dashboardFooter.online') }
+
+  const transportStatus = roadCount.value >= 40
+    ? { colorClass: 'text-industrial-green', statusClass: 'status-online', label: t('dashboardFooter.smooth') }
+    : roadCount.value >= 10
+      ? { colorClass: 'text-industrial-yellow', statusClass: 'status-warning', label: t('dashboardFooter.limited') }
+      : { colorClass: 'text-red-400', statusClass: 'status-error', label: t('dashboardFooter.weak') }
+
+  const civicCount = hospitalCount.value + policeStationCount.value + fireStationCount.value
+  const securityStatus = civicCount >= 3
+    ? { colorClass: 'text-industrial-green', statusClass: 'status-online', label: t('dashboardFooter.secure') }
+    : civicCount >= 1
+      ? { colorClass: 'text-industrial-yellow', statusClass: 'status-warning', label: t('dashboardFooter.moderate') }
+      : { colorClass: 'text-red-400', statusClass: 'status-error', label: t('dashboardFooter.weak') }
+
+  const envStatus = pollution.value <= 0
+    ? { colorClass: 'text-industrial-green', statusClass: 'status-online', label: t('dashboardFooter.excellent') }
+    : pollution.value <= 60
+      ? { colorClass: 'text-industrial-yellow', statusClass: 'status-warning', label: t('dashboardFooter.moderate') }
+      : { colorClass: 'text-red-500', statusClass: 'status-error', label: t('dashboardFooter.polluted') }
+
+  return [
+    { key: 'powerGrid', ...powerStatus },
+    { key: 'transport', ...transportStatus },
+    { key: 'security', ...securityStatus },
+    { key: 'environment', ...envStatus },
+  ]
+})
 </script>
 
 <template>
@@ -106,21 +120,26 @@ const systemStatusList = computed(() => [
         {{ t('dashboardFooter.achievements') }}
       </h3>
       <div class="space-y-2">
-        <div class="flex items-center justify-between bg-industrial-gray rounded p-2">
+        <div
+          v-for="ach in primaryAchievements"
+          :key="ach.key"
+          class="flex items-center justify-between bg-industrial-gray rounded p-2"
+        >
           <div class="flex items-center space-x-2">
-            <span class="text-industrial-yellow">🏆</span>
-            <span class="text-xs text-gray-300 uppercase">{{ t('dashboardFooter.firstFactory') }}</span>
+            <span :class="ach.unlocked ? 'text-industrial-yellow' : 'text-gray-500'">🏆</span>
+            <span class="text-xs uppercase" :class="ach.unlocked ? 'text-white font-bold' : 'text-gray-400'">
+              {{ t(`dashboardFooter.${ach.key}`) }}
+            </span>
           </div>
-          <div class="status-indicator status-online" />
+          <div v-if="ach.unlocked" class="status-indicator status-online" />
+          <div v-else class="text-xs text-gray-400">
+            {{ ach.progress }}%
+          </div>
         </div>
-        <div class="flex items-center justify-between bg-industrial-gray rounded p-2">
-          <div class="flex items-center space-x-2">
-            <span class="text-gray-500">🏆</span>
-            <span class="text-xs text-gray-500 uppercase">{{ t('dashboardFooter.industrialTycoon') }}</span>
-          </div>
-          <div class="text-xs text-gray-500">
-            75%
-          </div>
+        <div class="flex items-center justify-between text-[11px] text-gray-400 px-1">
+          <span v-for="ach in extraAchievements" :key="ach.key" :class="ach.unlocked ? 'text-industrial-green font-bold' : ''">
+            {{ ach.unlocked ? '✓' : '·' }} {{ t(`dashboardFooter.${ach.key}`) }} {{ ach.progress }}%
+          </span>
         </div>
         <button
           class="industrial-button w-full text-white font-bold py-2 px-4 text-xs uppercase tracking-wide"

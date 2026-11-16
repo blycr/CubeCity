@@ -22,7 +22,7 @@ const gameState = useGameState()
 const i18n = createI18n({
   legacy: false,
   locale: gameState.language,
-  fallbackLocale: 'en',
+  fallbackLocale: 'zh',
   messages: { zh, en },
 })
 
